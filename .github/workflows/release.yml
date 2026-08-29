@@ -1,0 +1,211 @@
+name: Build release
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      force_release:
+        description: 'Force create release even if tag exists'
+        required: false
+        default: false
+        type: boolean
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+
+permissions:
+  contents: write
+
+jobs:
+  detect-version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.get-version.outputs.version }}
+      should-release: ${{ steps.check-release.outputs.should-release }}
+      tag-exists: ${{ steps.check-tag.outputs.exists }}
+      testing: ${{ steps.is-testing.outputs.testing }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Extract version from SonarCommon.props
+        id: get-version
+        run: |
+          if command -v xmllint >/dev/null 2>&1; then
+            VERSION=$(xmllint --xpath "string(//PropertyGroup/AssemblyVersion)" SonarCommon.props 2>/dev/null || true)
+          fi
+          if [ -z "$VERSION" ]; then
+            VERSION=$(grep -oP '<AssemblyVersion>\K[^<]+' SonarCommon.props | head -1)
+          fi
+          if [ -z "$VERSION" ]; then
+            echo "Error: Could not extract AssemblyVersion from SonarCommon.props"
+            exit 1
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Detected version: $VERSION"
+
+      - name: Check if branch is testing
+        id: is-testing
+        run: |
+          BRANCH=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}
+          if [ "$BRANCH" = "main" ]; then
+            echo "testing=false" >> $GITHUB_OUTPUT
+          else
+            echo "testing=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check if tag already exists
+        id: check-tag
+        run: |
+          TAG="v${{ steps.get-version.outputs.version }}"
+          if git ls-remote --tags origin | grep -q "refs/tags/$TAG$"; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "Tag $TAG already exists"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "Tag $TAG does not exist"
+          fi
+
+      - name: Determine if release should be created
+        id: check-release
+        run: |
+          FORCE_RELEASE="${{ github.event.inputs.force_release }}"
+          TAG_EXISTS="${{ steps.check-tag.outputs.exists }}"
+          if [ "$FORCE_RELEASE" = "true" ] || [ "$TAG_EXISTS" = "false" ]; then
+            echo "should-release=true" >> $GITHUB_OUTPUT
+            echo "Will create release"
+          else
+            echo "should-release=false" >> $GITHUB_OUTPUT
+            echo "Will not create release (tag exists and not forced)"
+          fi
+
+  build-and-release:
+    needs: detect-version
+    if: needs.detect-version.outputs.should-release == 'true'
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ needs.detect-version.outputs.version }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/packages.lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Download and setup Dalamud
+        run: |
+          echo "Downloading Dalamud..."
+          wget -q https://goatcorp.github.io/dalamud-distrib/stg/latest.zip -O dalamud.zip
+          unzip -q dalamud.zip -d .dalamud
+          echo "DALAMUD_HOME=$PWD/.dalamud/" >> $GITHUB_ENV
+
+      - name: Restore NuGet packages
+        run: dotnet restore /p:Configuration=Release --packages .nuget
+
+      - name: Build Plugin
+        run: |
+          dotnet build SonarPlugin/SonarPlugin.csproj \
+            -c Release \
+            -p:DalamudLibPath=$DALAMUD_HOME \
+            --source $PWD/.nuget
+
+      - name: Prepare artifacts
+        run: |
+          mkdir -p release
+          if [ -f "SonarPlugin/bin/SonarPlugin/latest.zip" ]; then
+            cp "SonarPlugin/bin/SonarPlugin/latest.zip" "release/latest.zip"
+          else
+            echo "Error: latest.zip not found"
+            ls -la SonarPlugin/bin/SonarPlugin/ || true
+            exit 1
+          fi
+          if [ -f "SonarPlugin/bin/SonarPlugin/SonarPlugin.json" ]; then
+            cp "SonarPlugin/bin/SonarPlugin/SonarPlugin.json" "release/SonarPlugin.json"
+          else
+            echo "Warning: SonarPlugin.json not found"
+          fi
+          ls -la release/
+
+      - name: Generate checksums
+        run: |
+          cd release
+          for file in *; do
+            if [ -f "$file" ]; then
+              sha256sum "$file" > "$file.sha256"
+            fi
+          done
+
+      - name: Create and push tag
+        run: |
+          TAG="v${VERSION}"
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          if [ "${{ needs.detect-version.outputs.tag-exists }}" = "true" ]; then
+            echo "Deleting existing tag $TAG"
+            git tag -d $TAG || true
+            git push origin :refs/tags/$TAG || true
+          fi
+          git tag $TAG -m "Release version ${VERSION}"
+          git push origin $TAG
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ env.VERSION }}
+          name: "Sonar v${{ env.VERSION }}"
+          body: |
+            ## Sonar v${{ env.VERSION }}
+
+            Automatically built from `${{ github.ref_name }}` @ ${{ github.sha }}.
+
+            ### Installation
+            - Download `latest.zip` and extract into your Dalamud `devPlugins` folder as a subdirectory, or use a custom plugin repository.
+            - `SonarPlugin.json` is the plugin manifest.
+            - `*.sha256` files are checksums for verification.
+          files: |
+            release/*
+          draft: false
+          prerelease: ${{ needs.detect-version.outputs.testing }}
+
+      - name: Publish to DalamudPlugins repo
+        if: ${{ vars.PLUGIN_REPO != '' && secrets.PLUGIN_REPO_TOKEN != '' }}
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ vars.PLUGIN_REPO }}
+          token: ${{ secrets.PLUGIN_REPO_TOKEN }}
+          path: dalamud-plugins
+
+      - name: Update pluginmaster.json
+        if: ${{ vars.PLUGIN_REPO != '' && secrets.PLUGIN_REPO_TOKEN != '' }}
+        run: |
+          python3 .github/update_pluginmaster.py \
+            dalamud-plugins \
+            "${{ env.VERSION }}" \
+            "${{ github.repository }}" \
+            "release/SonarPlugin.json"
+
+      - name: Commit and push to DalamudPlugins
+        if: ${{ vars.PLUGIN_REPO != '' && secrets.PLUGIN_REPO_TOKEN != '' }}
+        run: |
+          cd dalamud-plugins
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add pluginmaster.json
+          git commit -m "Update Sonar to v${VERSION}"
+          git push
