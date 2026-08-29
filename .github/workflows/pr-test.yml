@@ -47,7 +47,7 @@ jobs:
           echo "DALAMUD_HOME=$PWD/.dalamud/" >> $GITHUB_ENV
 
       - name: Restore
-        run: dotnet restore /p:Configuration=Release --packages .nuget
+        run: dotnet restore SonarPlugin/SonarPlugin.csproj /p:Configuration=Release --packages .nuget
 
       - name: Build plugin
         run: |
