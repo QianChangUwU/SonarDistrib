@@ -1,4 +1,4 @@
-using Dalamud.Game.Command;
+﻿using Dalamud.Game.Command;
 using Dalamud.Interface.Windowing;
 using Dalamud.Logging;
 using Dalamud.Plugin.Services;
@@ -8,6 +8,7 @@ using Sonar;
 using Sonar.Relays;
 using SonarPlugin.Attributes;
 using SonarPlugin.GUI;
+using SonarPlugin.Localization;
 using SonarPlugin.Managers;
 using System;
 using System.Reflection.Metadata;
@@ -47,7 +48,7 @@ namespace SonarPlugin
         }
 
         [Command("/sonar")]
-        [HelpMessage("Open/close Sonar's main window")]
+        [HelpMessage(CommandsLoc.ToggleMainWindow)]
         [ShowInHelp]
         private void ToggleMainWindowCommand(string command, string args)
         {
@@ -56,7 +57,7 @@ namespace SonarPlugin
 
         [Command("/sonarconfig")]
         [Aliases("/sonarcfg")]
-        [HelpMessage("Open/close Sonar's configuration")]
+        [HelpMessage(CommandsLoc.ToggleConfigWindow)]
         [ShowInHelp]
         private void ToggleConfigWindowCommand(string command, string args)
         {
@@ -64,7 +65,7 @@ namespace SonarPlugin
         }
 
         [Command("/sonartracker")]
-        [HelpMessage("Open/close Sonar's tracker")]
+        [HelpMessage(CommandsLoc.ToggleTrackerWindow)]
         [DoNotShowInHelp]
         private void ToggleTrackerWindowCommand(string command, string args)
         {
@@ -72,7 +73,7 @@ namespace SonarPlugin
         }
 
         [Command("/sonarerror")]
-        [HelpMessage("Open/close Sonar errors window")]
+        [HelpMessage(CommandsLoc.ToggleErrorWindow)]
         [DoNotShowInHelp]
         private void ToggleErrorWindowCommand(string command, string args)
         {
@@ -80,7 +81,7 @@ namespace SonarPlugin
         }
 
         [Command("/sonarsupport")]
-        [HelpMessage("Contact Sonar Support")]
+        [HelpMessage(CommandsLoc.ContactSupport)]
         [ShowInHelp]
         private void SonarSupportCommand(string command, string args)
         {
@@ -89,7 +90,7 @@ namespace SonarPlugin
 
         [Command("/sonaron")]
         [Aliases("/sonarenable")]
-        [HelpMessage("Turn Global Contribute on")]
+        [HelpMessage(CommandsLoc.TurnGlobalContributeOn)]
         [ShowInHelp]
         private void SonarOnCommand(string command, string args)
         {
@@ -102,7 +103,7 @@ namespace SonarPlugin
 
         [Command("/sonaroff")]
         [Aliases("/sonardisable")]
-        [HelpMessage("Turn Global Contribute off")]
+        [HelpMessage(CommandsLoc.TurnGlobalContributeOff)]
         [ShowInHelp]
         private void SonarOffCommand(string command, string args)
         {
@@ -114,7 +115,7 @@ namespace SonarPlugin
         }
 
         [Command("/sonartoggle")]
-        [HelpMessage("Toggle Global Contribute on/off")]
+        [HelpMessage(CommandsLoc.ToggleGlobalContribute)]
         [ShowInHelp]
         private void SonarToggleCommand(string command, string args)
         {

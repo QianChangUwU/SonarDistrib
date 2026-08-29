@@ -9,6 +9,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Resources\en.plugin.lang.json" />
+    <None Remove="Resources\zh-cn.plugin.lang.json" />
+    <None Remove="Resources\zh-cn.cheaploc.json" />
     <None Remove="Resources\Flavor.data" />
     <None Remove="Resources\Icons\redflag.png" />
     <None Remove="Resources\Secret.data" />
@@ -29,6 +32,8 @@
 
   <ItemGroup>
     <EmbeddedResource Include="Resources\en.plugin.lang.json" />
+    <EmbeddedResource Include="Resources\zh-cn.plugin.lang.json" />
+    <EmbeddedResource Include="Resources\zh-cn.cheaploc.json" />
     <EmbeddedResource Include="Resources\Flavor.data" />
     <EmbeddedResource Include="Resources\Icons\redflag.png">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>

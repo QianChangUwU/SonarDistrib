@@ -85,6 +85,7 @@ namespace SonarPlugin
             this.Logger.LogInformation("Setting up localization");
             EnumLocUtils.Setup(this.Configuration.Localization.DebugFallbacks);
             CheapLoc.Loc.SetupWithFallbacks();
+            this.SetupCheapLoc();
 
             try
             {
@@ -215,6 +216,30 @@ namespace SonarPlugin
 #endif
 
             return container;
+        }
+
+        /// <summary>Load the embedded CheapLoc language overrides (Simplified Chinese).</summary>
+        private void SetupCheapLoc()
+        {
+            try
+            {
+                var assembly = typeof(SonarPluginIoC).Assembly;
+                var name = assembly.GetManifestResourceNames().FirstOrDefault(n => n.EndsWith("zh-cn.cheaploc.json", StringComparison.OrdinalIgnoreCase));
+                if (name is null)
+                {
+                    this.Logger.LogWarning("CheapLoc resource zh-cn.cheaploc.json not found, skipping");
+                    return;
+                }
+
+                using var stream = assembly.GetManifestResourceStream(name);
+                using var reader = new StreamReader(stream);
+                CheapLoc.Loc.Setup(reader.ReadToEnd());
+                this.Logger.LogInformation("Loaded CheapLoc overrides from {name}", name);
+            }
+            catch (Exception ex)
+            {
+                this.Logger.LogError(ex, "Failed to load CheapLoc overrides");
+            }
         }
 
         /// <inheritdoc/>

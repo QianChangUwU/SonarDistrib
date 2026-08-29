@@ -1,8 +1,8 @@
 {
   "Author": "Sonar Team",
   "Name": "Sonar",
-  "Punchline": "Automatically send and receive hunt and fate relays.",
-  "Description": "Automatically send and receive hunt and fate relays. /sonar to open, /sonarconfig to configure. Support is only provided in the Sonar Support discord.",
+  "Punchline": "自动收发狩猎与危命情报中继。",
+  "Description": "自动收发狩猎与危命情报中继。输入 /sonar 打开主窗口，/sonarconfig 进行设置。技术支持仅在 Sonar Support Discord 提供。",
   "Changelog": "See https://news.ffxivsonar.com for more information",
   "InternalName": "SonarPlugin",
   "LoadSync": false,
@@ -34,8 +34,8 @@
   "supportInfo": {
     "supportLink": "https://discord.gg/K7y24Rr",
     "supportLinkLabel": "Sonar Support Discord",
-    "supportText": "Support is provided exclusively at the Sonar Support discord. You can also create a ticket if privacy is desired. To send feedback please do so via /sonarsupport or join the Discord."
+    "supportText": "技术支持仅在 Sonar Support Discord 提供。如需隐私保护也可以创建工单。如需发送反馈，请通过 /sonarsupport 或加入 Discord。"
   },
   "AcceptsFeedback": false,
-  "AcceptsFeedbackComment": "To send feedback, type /sonarsupport to send feedback or let us know in the Sonar Support discord"
+  "AcceptsFeedbackComment": "如需反馈，请输入 /sonarsupport 发送反馈，或在 Sonar Support Discord 告知我们"
 }

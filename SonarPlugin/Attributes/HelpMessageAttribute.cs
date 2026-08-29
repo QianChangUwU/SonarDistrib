@@ -1,3 +1,5 @@
+using AG.EnumLocalization;
+using SonarPlugin.Localization;
 using System;
 
 namespace SonarPlugin.Attributes
@@ -10,6 +12,11 @@ namespace SonarPlugin.Attributes
         public HelpMessageAttribute(string helpMessage)
         {
             HelpMessage = helpMessage;
+        }
+
+        public HelpMessageAttribute(CommandsLoc loc)
+        {
+            HelpMessage = loc.GetLocString();
         }
     }
 }

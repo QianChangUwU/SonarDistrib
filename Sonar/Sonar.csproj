@@ -8,6 +8,7 @@
   <ItemGroup>
     <None Remove="Resources\Db.data" />
     <None Remove="Resources\en.sonar.lang.json" />
+    <None Remove="Resources\zh-cn.sonar.lang.json" />
     <None Remove="Resources\Secret.data" />
     <None Remove="Resources\Urls.data" />
   </ItemGroup>
@@ -15,6 +16,7 @@
   <ItemGroup>
     <EmbeddedResource Include="Resources\Db.data" />
     <EmbeddedResource Include="Resources\en.sonar.lang.json" />
+    <EmbeddedResource Include="Resources\zh-cn.sonar.lang.json" />
     <EmbeddedResource Include="Resources\Urls.data" />
   </ItemGroup>
 
