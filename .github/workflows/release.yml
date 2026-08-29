@@ -183,8 +183,31 @@ jobs:
           draft: false
           prerelease: ${{ needs.detect-version.outputs.testing }}
 
+      - name: Upload release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release
+          path: release/
+
+  publish-pluginmaster:
+    needs: build-and-release
+    if: vars.PLUGIN_REPO != ''
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ needs.detect-version.outputs.version }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Download release assets
+        uses: actions/download-artifact@v4
+        with:
+          name: release
+          path: release
+
       - name: Publish to DalamudPlugins repo
-        if: ${{ vars.PLUGIN_REPO != '' && secrets.PLUGIN_REPO_TOKEN != '' }}
         uses: actions/checkout@v4
         with:
           repository: ${{ vars.PLUGIN_REPO }}
@@ -192,7 +215,6 @@ jobs:
           path: dalamud-plugins
 
       - name: Update pluginmaster.json
-        if: ${{ vars.PLUGIN_REPO != '' && secrets.PLUGIN_REPO_TOKEN != '' }}
         run: |
           python3 .github/update_pluginmaster.py \
             dalamud-plugins \
@@ -201,7 +223,6 @@ jobs:
             "release/SonarPlugin.json"
 
       - name: Commit and push to DalamudPlugins
-        if: ${{ vars.PLUGIN_REPO != '' && secrets.PLUGIN_REPO_TOKEN != '' }}
         run: |
           cd dalamud-plugins
           git config --local user.email "action@github.com"
