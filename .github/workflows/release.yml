@@ -190,7 +190,7 @@ jobs:
           path: release/
 
   publish-pluginmaster:
-    needs: build-and-release
+    needs: [detect-version, build-and-release]
     runs-on: ubuntu-latest
     env:
       VERSION: ${{ needs.detect-version.outputs.version }}
