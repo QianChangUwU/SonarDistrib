@@ -191,7 +191,6 @@ jobs:
 
   publish-pluginmaster:
     needs: build-and-release
-    if: vars.PLUGIN_REPO != ''
     runs-on: ubuntu-latest
     env:
       VERSION: ${{ needs.detect-version.outputs.version }}
@@ -210,7 +209,7 @@ jobs:
       - name: Publish to DalamudPlugins repo
         uses: actions/checkout@v4
         with:
-          repository: ${{ vars.PLUGIN_REPO }}
+          repository: QianChangUwU/DalamudPlugins
           token: ${{ secrets.PLUGIN_REPO_TOKEN }}
           path: dalamud-plugins
 
